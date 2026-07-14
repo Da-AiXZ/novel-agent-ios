@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import NovelAgentCore
 
 struct HomeView: View {
     @EnvironmentObject private var appModel: AppModel
@@ -164,4 +165,3 @@ private struct ProjectRow: View {
         }
     }
 }
-
