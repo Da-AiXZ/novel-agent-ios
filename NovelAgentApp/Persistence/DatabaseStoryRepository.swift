@@ -10,7 +10,7 @@ final class DatabaseStoryRepository: StoryRepository, @unchecked Sendable {
     }
 
     func listProjects() async throws -> [StoryProject] {
-        try database.dbPool.read { db in
+        try await database.dbPool.read { db in
             let rows = try Row.fetchAll(
                 db,
                 sql: "SELECT * FROM projects ORDER BY updatedAt DESC"
@@ -20,7 +20,7 @@ final class DatabaseStoryRepository: StoryRepository, @unchecked Sendable {
     }
 
     func createProject(_ project: StoryProject) async throws {
-        try database.dbPool.write { db in
+        try await database.dbPool.write { db in
             try db.execute(
                 sql: """
                     INSERT INTO projects
@@ -41,7 +41,7 @@ final class DatabaseStoryRepository: StoryRepository, @unchecked Sendable {
     }
 
     func deleteProject(id: UUID) async throws {
-        try database.dbPool.write { db in
+        try await database.dbPool.write { db in
             try db.execute(
                 sql: "DELETE FROM knowledge_fts WHERE projectID = ?",
                 arguments: [id.uuidString]
@@ -54,19 +54,19 @@ final class DatabaseStoryRepository: StoryRepository, @unchecked Sendable {
     }
 
     func loadSnapshot(projectID: UUID) async throws -> StorySnapshot {
-        try database.dbPool.read { db in
+        try await database.dbPool.read { db in
             try Self.snapshot(db: db, projectID: projectID)
         }
     }
 
     func listChapters(projectID: UUID) async throws -> [Chapter] {
-        try database.dbPool.read { db in
+        try await database.dbPool.read { db in
             try Self.chapters(db: db, projectID: projectID)
         }
     }
 
     func loadChapter(projectID: UUID, chapterID: UUID) async throws -> Chapter {
-        try database.dbPool.read { db in
+        try await database.dbPool.read { db in
             guard let row = try Row.fetchOne(
                 db,
                 sql: "SELECT * FROM chapters WHERE projectID = ? AND id = ?",
@@ -79,7 +79,7 @@ final class DatabaseStoryRepository: StoryRepository, @unchecked Sendable {
     }
 
     func searchMemory(projectID: UUID, query: String, limit: Int) async throws -> [MemoryChunk] {
-        try database.dbPool.read { db in
+        try await database.dbPool.read { db in
             let matchQuery = Self.ftsQuery(query)
             var rows: [Row] = []
             if !matchQuery.isEmpty {
@@ -121,7 +121,7 @@ final class DatabaseStoryRepository: StoryRepository, @unchecked Sendable {
         projectID: UUID,
         expectedRevision: Int
     ) async throws -> Int {
-        try database.dbPool.write { db in
+        try await database.dbPool.write { db in
             guard let row = try Row.fetchOne(
                 db,
                 sql: "SELECT revision FROM projects WHERE id = ?",
@@ -265,13 +265,13 @@ final class DatabaseStoryRepository: StoryRepository, @unchecked Sendable {
     }
 
     func createRun(_ run: AgentRunRecord) async throws {
-        try database.dbPool.write { db in
+        try await database.dbPool.write { db in
             try Self.upsert(run, db: db)
         }
     }
 
     func updateRun(_ run: AgentRunRecord) async throws {
-        try database.dbPool.write { db in
+        try await database.dbPool.write { db in
             try Self.upsert(run, db: db)
             try db.execute(
                 sql: """
@@ -290,7 +290,7 @@ final class DatabaseStoryRepository: StoryRepository, @unchecked Sendable {
     }
 
     func loadRecoverableRun(projectID: UUID, kind: String) async throws -> AgentRunRecord? {
-        try database.dbPool.read { db in
+        try await database.dbPool.read { db in
             guard let row = try Row.fetchOne(
                 db,
                 sql: """
@@ -316,7 +316,7 @@ final class DatabaseStoryRepository: StoryRepository, @unchecked Sendable {
     }
 
     func exportProject(projectID: UUID) async throws -> ProjectArchive {
-        try database.dbPool.read { db in
+        try await database.dbPool.read { db in
             let snapshot = try Self.snapshot(db: db, projectID: projectID)
             let chapters = try Self.chapters(db: db, projectID: projectID)
             let summaryRows = try Row.fetchAll(
@@ -342,7 +342,7 @@ final class DatabaseStoryRepository: StoryRepository, @unchecked Sendable {
         guard archive.formatVersion == 1 else {
             throw CoreError.unsupported("备份格式版本 \(archive.formatVersion)")
         }
-        return try database.dbPool.write { db in
+        return try await database.dbPool.write { db in
             var snapshot = archive.snapshot
             let existing = try Int.fetchOne(
                 db,
