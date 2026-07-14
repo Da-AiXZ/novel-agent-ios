@@ -27,20 +27,21 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ inputs.version }}"
-          EXTRA_SETTINGS=()
+          BUILD_ARGS=(
+            build
+            -project NovelAgent.xcodeproj
+            -scheme NovelAgent
+            -configuration Release
+            -sdk iphoneos
+            -destination 'generic/platform=iOS'
+            -derivedDataPath DerivedData
+            CODE_SIGNING_ALLOWED=NO
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+          )
           if [[ -n "$VERSION" ]]; then
-            EXTRA_SETTINGS+=("MARKETING_VERSION=$VERSION")
+            BUILD_ARGS+=("MARKETING_VERSION=$VERSION")
           fi
-          xcodebuild build \
-            -project NovelAgent.xcodeproj \
-            -scheme NovelAgent \
-            -configuration Release \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath DerivedData \
-            CODE_SIGNING_ALLOWED=NO \
-            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
-            "${EXTRA_SETTINGS[@]}"
+          xcodebuild "${BUILD_ARGS[@]}"
       - name: Package IPA
         run: |
           set -euo pipefail
@@ -60,4 +61,3 @@ jobs:
             NovelAgent-*.ipa
             SHA256SUMS.txt
           retention-days: 30
-
