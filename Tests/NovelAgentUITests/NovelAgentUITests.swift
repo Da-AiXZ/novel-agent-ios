@@ -1,5 +1,6 @@
 import XCTest
 
+@MainActor
 final class NovelAgentUITests: XCTestCase {
     func testCreateProjectAndOpenInterview() {
         let app = XCUIApplication()
@@ -8,16 +9,19 @@ final class NovelAgentUITests: XCTestCase {
 
         app.buttons["createProject"].tap()
         let title = app.textFields["newProjectTitle"]
-        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        let titleExists = title.waitForExistence(timeout: 5)
+        XCTAssertTrue(titleExists)
         title.tap()
         title.typeText("测试长篇")
         app.buttons["confirmCreateProject"].tap()
 
         let row = app.staticTexts["测试长篇"]
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        let rowExists = row.waitForExistence(timeout: 5)
+        XCTAssertTrue(rowExists)
         row.tap()
-        XCTAssertTrue(app.textViews["interviewAnswer"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["primaryAction"].exists)
+        let answerExists = app.textViews["interviewAnswer"].waitForExistence(timeout: 5)
+        let primaryExists = app.buttons["primaryAction"].exists
+        XCTAssertTrue(answerExists)
+        XCTAssertTrue(primaryExists)
     }
 }
-
