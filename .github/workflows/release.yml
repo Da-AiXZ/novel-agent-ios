@@ -1,0 +1,63 @@
+name: Build Unsigned IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Optional display version
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 16.4
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Build device application
+        run: |
+          set -euo pipefail
+          VERSION="${{ inputs.version }}"
+          EXTRA_SETTINGS=()
+          if [[ -n "$VERSION" ]]; then
+            EXTRA_SETTINGS+=("MARKETING_VERSION=$VERSION")
+          fi
+          xcodebuild build \
+            -project NovelAgent.xcodeproj \
+            -scheme NovelAgent \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            "${EXTRA_SETTINGS[@]}"
+      - name: Package IPA
+        run: |
+          set -euo pipefail
+          APP="DerivedData/Build/Products/Release-iphoneos/NovelAgent.app"
+          test -d "$APP"
+          /usr/bin/codesign --force --deep --sign - "$APP"
+          mkdir -p Payload
+          ditto "$APP" "Payload/NovelAgent.app"
+          /usr/bin/zip -qry "NovelAgent-${GITHUB_SHA::7}.ipa" Payload
+          shasum -a 256 "NovelAgent-${GITHUB_SHA::7}.ipa" > SHA256SUMS.txt
+          /usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$APP/Info.plist"
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovelAgent-unsigned-${{ github.run_number }}
+          path: |
+            NovelAgent-*.ipa
+            SHA256SUMS.txt
+          retention-days: 30
+

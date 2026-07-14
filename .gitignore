@@ -1,0 +1,24 @@
+.DS_Store
+.build/
+.swiftpm/
+DerivedData/
+build/
+Package.resolved
+NovelAgent.xcodeproj/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.ipa
+*.tipa
+*.zip
+*.tar.gz
+*.xcresult
+*.db
+*.db-shm
+*.db-wal
+.env
+Secrets.xcconfig
+Validation/
+
+# Local research inputs are intentionally not redistributed.
+AI写小说开发资料包.zip
+claude-code-main.tar.gz

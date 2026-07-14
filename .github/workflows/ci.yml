@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-windows:
+    name: Core Tests (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.0"
+      - name: Test core package
+        run: swift test --parallel
+
+  ios:
+    name: iOS Build and Tests
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 16.4
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Resolve packages
+        run: xcodebuild -project NovelAgent.xcodeproj -scheme NovelAgent -resolvePackageDependencies
+      - name: Test core package
+        run: swift test --parallel
+      - name: Build and test iOS
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project NovelAgent.xcodeproj \
+            -scheme NovelAgent \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-results
+          path: DerivedData/Logs/Test
+          if-no-files-found: ignore
+

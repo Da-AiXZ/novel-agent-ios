@@ -1,0 +1,115 @@
+name: NovelAgent
+
+options:
+  minimumXcodeGenVersion: 2.42.0
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+packages:
+  NovelAgentModules:
+    path: .
+  GRDB:
+    url: https://github.com/groue/GRDB.swift.git
+    from: 7.10.0
+  ZIPFoundation:
+    url: https://github.com/weichsel/ZIPFoundation.git
+    from: 0.9.0
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: YES
+
+targets:
+  NovelAgent:
+    type: application
+    platform: iOS
+    sources:
+      - path: NovelAgentApp
+        excludes:
+          - Resources
+    resources:
+      - path: NovelAgentApp/Resources
+    dependencies:
+      - package: NovelAgentModules
+        product: NovelAgentCore
+      - package: NovelAgentModules
+        product: NovelAgentProviders
+      - package: GRDB
+        product: GRDB
+      - package: ZIPFoundation
+        product: ZIPFoundation
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.juyang.NovelAgent
+        PRODUCT_NAME: NovelAgent
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "1.0.0"
+        INFOPLIST_KEY_CFBundleDisplayName: NovelAgent
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIRequiresFullScreen: YES
+        SUPPORTS_MACCATALYST: NO
+    info:
+      path: NovelAgentApp/Info.plist
+      properties:
+        CFBundleDevelopmentRegion: zh_CN
+        CFBundleLocalizations:
+          - zh_CN
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+
+  NovelAgentAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/NovelAgentAppTests
+    dependencies:
+      - target: NovelAgent
+      - package: NovelAgentModules
+        product: NovelAgentCore
+      - package: NovelAgentModules
+        product: NovelAgentProviders
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.juyang.NovelAgent.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+  NovelAgentUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Tests/NovelAgentUITests
+    dependencies:
+      - target: NovelAgent
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.juyang.NovelAgent.uitests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  NovelAgent:
+    build:
+      targets:
+        NovelAgent: all
+        NovelAgentAppTests: [test]
+        NovelAgentUITests: [test]
+    test:
+      gatherCoverageData: true
+      targets:
+        - name: NovelAgentAppTests
+          parallelizable: true
+        - name: NovelAgentUITests
+          parallelizable: false

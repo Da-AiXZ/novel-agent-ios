@@ -1,0 +1,56 @@
+name: Live Provider Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider_kind:
+        description: openAIResponses, anthropicMessages, or openAICompatible
+        required: true
+        default: openAICompatible
+        type: choice
+        options:
+          - openAICompatible
+          - openAIResponses
+          - anthropicMessages
+      base_url:
+        description: HTTPS API base URL ending in /v1
+        required: true
+        type: string
+      model:
+        description: Model identifier
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: macos-15
+    environment: live-api
+    timeout-minutes: 20
+    env:
+      NOVELAGENT_RUN_LIVE_TESTS: "1"
+      NOVELAGENT_PROVIDER_KIND: ${{ inputs.provider_kind }}
+      NOVELAGENT_BASE_URL: ${{ inputs.base_url }}
+      NOVELAGENT_MODEL: ${{ inputs.model }}
+      NOVELAGENT_API_KEY: ${{ secrets.NOVELAGENT_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 16.4
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Run live smoke test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project NovelAgent.xcodeproj \
+            -scheme NovelAgent \
+            -only-testing:NovelAgentAppTests/LiveProviderSmokeTests \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty
+
